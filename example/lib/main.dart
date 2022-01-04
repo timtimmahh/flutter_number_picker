@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Center(
           child: Container(
-            child: CustomNumberPicker(
+            child: NumberPicker(
               initialValue: 10000,
               maxValue: 1000000,
               minValue: 0,
