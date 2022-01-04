@@ -11,27 +11,38 @@ class NumberPicker<T extends num> extends StatefulWidget {
   final T maxValue;
   final T minValue;
   final T initialValue;
-  final T step;
+  final T Function(T value) stepper;
 
   ///default vale true
   final bool enable;
 
-  NumberPicker(
-      {Key? key,
-      this.shape,
-      this.valueTextStyle,
-      required this.onValue,
-      required this.initialValue,
-      required this.maxValue,
-      required this.minValue,
-      required this.step,
-      this.customAddButton,
-      this.customMinusButton,
-      this.enable = true})
+  NumberPicker({Key? key,
+    this.shape,
+    this.valueTextStyle,
+    required this.onValue,
+    required this.initialValue,
+    required this.maxValue,
+    required this.minValue,
+    required this.stepper,
+    this.customAddButton,
+    this.customMinusButton,
+    this.enable = true})
       : assert(initialValue.runtimeType != String),
         assert(maxValue.runtimeType == initialValue.runtimeType),
         assert(minValue.runtimeType == initialValue.runtimeType),
         super(key: key);
+
+  NumberPicker.consistent({Key? key,
+    this.shape,
+    this.valueTextStyle,
+    required this.onValue,
+    required this.initialValue,
+    required this.maxValue,
+    required this.minValue,
+    required T step = 1,
+    this.customAddButton,
+    this.customMinusButton,
+    this.enable = true}) : stepper = (_) => step;
 
   @override
   State<StatefulWidget> createState() {
@@ -43,7 +54,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
   late T _initialValue = widget.initialValue;
   late T _maxValue = widget.maxValue;
   late T _minValue = widget.minValue;
-  late T _step = widget.step;
+  late T Function(T value) _stepper = widget.stepper;
   Timer? _timer;
 
   @override
@@ -52,7 +63,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
     // _initialValue = widget.initialValue;
     // _maxValue = widget.maxValue;
     // _minValue = widget.minValue;
-    // _step = widget.step;
+    // _stepper = widget.step;
   }
 
   @override
@@ -82,7 +93,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
               child: widget.customMinusButton ??
                   Padding(
                     padding:
-                        EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
+                    EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
                     child: Icon(
                       Icons.remove,
                       size: 15,
@@ -109,7 +120,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
               child: widget.customAddButton ??
                   Padding(
                     padding:
-                        EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
+                    EdgeInsets.only(left: 6, right: 6, bottom: 6, top: 6),
                     child: Icon(Icons.add, size: 15),
                   ),
             )
@@ -125,7 +136,9 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
         maxLines: 1,
         textDirection: TextDirection.ltr)
       ..layout(
-          minWidth: 0, maxWidth: _maxValue.toString().length * style.fontSize!);
+          minWidth: 0, maxWidth: _maxValue
+          .toString()
+          .length * style.fontSize!);
     return textPainter.size;
   }
 
@@ -133,7 +146,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
     _timer?.cancel();
     if (canDoAction(DoAction.MINUS)) {
       setState(() {
-        _initialValue = (_initialValue - _step) as T;
+        _initialValue = (_initialValue - _stepper(_initialValue)) as T;
       });
     }
     widget.onValue(_initialValue);
@@ -143,7 +156,7 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
     _timer?.cancel();
     if (canDoAction(DoAction.ADD)) {
       setState(() {
-        _initialValue = (_initialValue + _step) as T;
+        _initialValue = (_initialValue + _stepper(_initialValue)) as T;
       });
     }
     widget.onValue(_initialValue);
@@ -160,10 +173,10 @@ class NumberPickerState<T extends num> extends State<NumberPicker<T>> {
 
   bool canDoAction(DoAction action) {
     if (action == DoAction.MINUS) {
-      return _initialValue - _step >= _minValue;
+      return _initialValue - _stepper(_initialValue) >= _minValue;
     }
     if (action == DoAction.ADD) {
-      return _initialValue + _step <= _maxValue;
+      return _initialValue + _stepper(_initialValue) <= _maxValue;
     }
     return false;
   }
